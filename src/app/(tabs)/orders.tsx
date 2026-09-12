@@ -1,11 +1,4 @@
-import React from "react";
-import {
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -18,92 +11,51 @@ import { Order } from "../../types/order";
 const OrdersScreen = () => {
   const { orders } = useOrders();
 
-  const renderOrder = ({
-    item,
-  }: {
-    item: Order;
-  }) => {
+  const renderOrder = ({ item }: { item: Order }) => {
     const firstItem = item.items[0];
 
     const itemCount = item.items.reduce(
-      (total, currentItem) =>
-        total + currentItem.quantity,
-      0
+      (total, currentItem) => total + currentItem.quantity,
+      0,
     );
 
     return (
       <Pressable
-        onPress={() =>
-          router.push(
-            `/order/${item.id}`
-          )
-        }
+        onPress={() => router.push(`/order/${item.id}`)}
         style={styles.orderCard}
       >
         <View style={styles.iconContainer}>
-          <Ionicons
-            name="receipt-outline"
-            size={22}
-            color={colors.primary}
-          />
+          <Ionicons name="receipt-outline" size={22} color={colors.primary} />
         </View>
 
         <View style={styles.orderContent}>
           <View style={styles.topRow}>
-            <Text style={styles.orderId}>
-              {item.id}
-            </Text>
+            <Text style={styles.orderId}>{item.id}</Text>
 
-            <View
-              style={[
-                styles.statusBadge,
-                getStatusStyle(item.status),
-              ]}
-            >
+            <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
               <Text
-                style={[
-                  styles.statusText,
-                  getStatusTextStyle(
-                    item.status
-                  ),
-                ]}
+                style={[styles.statusText, getStatusTextStyle(item.status)]}
               >
                 {item.status}
               </Text>
             </View>
           </View>
 
-          <Text
-            style={styles.itemName}
-            numberOfLines={1}
-          >
+          <Text style={styles.itemName} numberOfLines={1}>
             {firstItem?.name}
-            {item.items.length > 1
-              ? ` + ${
-                  item.items.length - 1
-                } more`
-              : ""}
+            {item.items.length > 1 ? ` + ${item.items.length - 1} more` : ""}
           </Text>
 
           <View style={styles.bottomRow}>
             <Text style={styles.itemCount}>
-              {itemCount}{" "}
-              {itemCount === 1
-                ? "item"
-                : "items"}
+              {itemCount} {itemCount === 1 ? "item" : "items"}
             </Text>
 
-            <Text style={styles.total}>
-              ${item.total.toFixed(2)}
-            </Text>
+            <Text style={styles.total}>${item.total.toFixed(2)}</Text>
           </View>
         </View>
 
-        <Ionicons
-          name="chevron-forward"
-          size={18}
-          color={colors.textLight}
-        />
+        <Ionicons name="chevron-forward" size={18} color={colors.textLight} />
       </Pressable>
     );
   };
@@ -111,15 +63,10 @@ const OrdersScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>
-          My Orders
-        </Text>
+        <Text style={styles.title}>My Orders</Text>
 
         <Text style={styles.subtitle}>
-          {orders.length}{" "}
-          {orders.length === 1
-            ? "order"
-            : "orders"}
+          {orders.length} {orders.length === 1 ? "order" : "orders"}
         </Text>
       </View>
 
@@ -129,25 +76,15 @@ const OrdersScreen = () => {
           title="No orders yet"
           description="Your completed orders will appear here."
           buttonText="Start Ordering"
-          onButtonPress={() =>
-            router.push(
-              "/(tabs)/home"
-            )
-          }
+          onButtonPress={() => router.push("/(tabs)/home")}
         />
       ) : (
         <FlatList
           data={orders}
-          keyExtractor={(item) =>
-            item.id
-          }
+          keyExtractor={(item) => String(item.id)}
           renderItem={renderOrder}
-          contentContainerStyle={
-            styles.listContent
-          }
-          showsVerticalScrollIndicator={
-            false
-          }
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
         />
       )}
     </View>
@@ -156,9 +93,7 @@ const OrdersScreen = () => {
 
 export default OrdersScreen;
 
-const getStatusStyle = (
-  status: Order["status"]
-) => {
+const getStatusStyle = (status: Order["status"]) => {
   switch (status) {
     case "Delivered":
       return styles.deliveredBadge;
@@ -174,9 +109,7 @@ const getStatusStyle = (
   }
 };
 
-const getStatusTextStyle = (
-  status: Order["status"]
-) => {
+const getStatusTextStyle = (status: Order["status"]) => {
   switch (status) {
     case "Delivered":
       return styles.deliveredText;

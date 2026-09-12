@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
   Image,
+  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -14,8 +15,12 @@ import { router } from "expo-router";
 
 import RestaurantCard from "../../components/RestaurantCard";
 import colors from "../../constants/colors";
-import { restaurants } from "../../data/restaurants";
 import { useAuth } from "../../hooks/useAuth";
+
+import { getAddresses } from "../../services/addressApi";
+import { getRestaurants } from "../../services/restaurantApi";
+import { Address } from "../../types/address";
+import { Restaurant } from "../../types/restaurant";
 
 const categories = [
   {
@@ -49,41 +54,102 @@ const HomeScreen = () => {
   const { user } = useAuth();
 
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] =
-    useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
+
+  // Load restaurants when HomeScreen opens
+  useEffect(() => {
+    loadRestaurants();
+  }, []);
+
+  // Load the user's saved addresses for the delivery dropdown
+  useEffect(() => {
+    loadAddresses();
+  }, [user]);
+
+  const loadRestaurants = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const data = await getRestaurants();
+
+      setRestaurants(data);
+    } catch (error) {
+      console.error("Failed to load restaurants:", error);
+      setError("Failed to load restaurants");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAddresses = async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      setLoadingAddresses(true);
+
+      const data = await getAddresses(Number(user.id));
+
+      setAddresses(data);
+
+      // Select the first address by default
+      setSelectedAddress((prev) => prev ?? data[0] ?? null);
+    } catch (error) {
+      console.error("Failed to load addresses:", error);
+    } finally {
+      setLoadingAddresses(false);
+    }
+  };
+
+  const getDayGreeting = () => {
+    const today = new Date();
+
+    const day = today.toLocaleDateString("en-US", {
+      weekday: "long",
+    });
+
+    return `Happy ${day} 👋`;
+  };
 
   const filteredRestaurants = useMemo(() => {
-    const normalizedSearch = search
-      .trim()
-      .toLowerCase();
+    const normalizedSearch = search.trim().toLowerCase();
 
     return restaurants.filter((restaurant) => {
       const matchesSearch =
         normalizedSearch.length === 0 ||
-        restaurant.name
-          .toLowerCase()
-          .includes(normalizedSearch) ||
-        restaurant.cuisine
-          .toLowerCase()
-          .includes(normalizedSearch);
+        restaurant.name.toLowerCase().includes(normalizedSearch) ||
+        restaurant.cuisine.toLowerCase().includes(normalizedSearch);
 
       const matchesCategory =
         selectedCategory === "all" ||
         restaurant.categories.some((category) =>
-          category
-            .toLowerCase()
-            .includes(selectedCategory)
+          category.toLowerCase().includes(selectedCategory),
         );
 
       return matchesSearch && matchesCategory;
     });
-  }, [search, selectedCategory]);
+  }, [restaurants, search, selectedCategory]);
+
+  const locationLabel = selectedAddress
+    ? `${selectedAddress.addressLine1}, ${selectedAddress.city}`
+    : "Add a delivery address";
 
   return (
     <View style={styles.container}>
       <FlatList
         data={filteredRestaurants}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => String(item.id)}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
@@ -103,38 +169,47 @@ const HomeScreen = () => {
           <>
             <View style={styles.header}>
               <View>
-                <Text style={styles.greeting}>
-                  Good evening 👋
-                </Text>
+                <Text style={styles.greeting}>{getDayGreeting()}</Text>
 
-                <Text style={styles.userName}>
-                  {user?.name || "Foodie"}
-                </Text>
+                <Text style={styles.userName}>{user?.name || "Foodie"}</Text>
               </View>
 
-              <Pressable style={styles.profileButton}>
-                <Ionicons
-                  name="person-outline"
-                  size={21}
-                  color={colors.text}
-                />
+              <Pressable
+                style={styles.profileButton}
+                onPress={() => router.push("/profile")}
+              >
+                <Ionicons name="person-outline" size={21} color={colors.text} />
               </Pressable>
             </View>
 
-            <View style={styles.locationContainer}>
-              <Ionicons
-                name="location"
-                size={17}
-                color={colors.primary}
-              />
+            {/* <View style={styles.locationContainer}>
+              <Ionicons name="location" size={17} color={colors.primary} />
 
               <View>
-                <Text style={styles.locationLabel}>
-                  Delivering to
-                </Text>
+                <Text style={styles.locationLabel}>Delivering to</Text>
 
-                <Text style={styles.location}>
-                  Home • 123 Main Street
+                <Text style={styles.location}>Home • 123 Main Street</Text>
+              </View>
+
+              <Ionicons
+                name="chevron-down"
+                size={16}
+                color={colors.textSecondary}
+                style={styles.locationArrow}
+              />
+            </View> */}
+
+            <Pressable
+              style={styles.locationContainer}
+              onPress={() => setIsLocationModalVisible(true)}
+            >
+              <Ionicons name="location" size={17} color={colors.primary} />
+
+              <View style={styles.locationTextContainer}>
+                <Text style={styles.locationLabel}>Delivering to</Text>
+
+                <Text style={styles.location} numberOfLines={1}>
+                  {locationLabel}
                 </Text>
               </View>
 
@@ -144,7 +219,7 @@ const HomeScreen = () => {
                 color={colors.textSecondary}
                 style={styles.locationArrow}
               />
-            </View>
+            </Pressable>
 
             <View style={styles.searchContainer}>
               <Ionicons
@@ -162,9 +237,7 @@ const HomeScreen = () => {
               />
 
               {search.length > 0 && (
-                <Pressable
-                  onPress={() => setSearch("")}
-                >
+                <Pressable onPress={() => setSearch("")}>
                   <Ionicons
                     name="close-circle"
                     size={19}
@@ -176,22 +249,16 @@ const HomeScreen = () => {
 
             <View style={styles.banner}>
               <View style={styles.bannerContent}>
-                <Text style={styles.bannerSmall}>
-                  LIMITED TIME
-                </Text>
+                <Text style={styles.bannerSmall}>LIMITED TIME</Text>
 
-                <Text style={styles.bannerTitle}>
-                  30% OFF
-                </Text>
+                <Text style={styles.bannerTitle}>30% OFF</Text>
 
                 <Text style={styles.bannerDescription}>
                   On your first order
                 </Text>
 
                 <Pressable style={styles.bannerButton}>
-                  <Text style={styles.bannerButtonText}>
-                    Order now
-                  </Text>
+                  <Text style={styles.bannerButtonText}>Order now</Text>
                 </Pressable>
               </View>
 
@@ -204,9 +271,7 @@ const HomeScreen = () => {
             </View>
 
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
-                Categories
-              </Text>
+              <Text style={styles.sectionTitle}>Categories</Text>
             </View>
 
             <FlatList
@@ -214,39 +279,25 @@ const HomeScreen = () => {
               horizontal
               showsHorizontalScrollIndicator={false}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={
-                styles.categoriesContainer
-              }
+              contentContainerStyle={styles.categoriesContainer}
               renderItem={({ item }) => {
-                const active =
-                  selectedCategory === item.id;
+                const active = selectedCategory === item.id;
 
                 return (
                   <Pressable
-                    onPress={() =>
-                      setSelectedCategory(item.id)
-                    }
-                    style={[
-                      styles.category,
-                      active &&
-                        styles.activeCategory,
-                    ]}
+                    onPress={() => setSelectedCategory(item.id)}
+                    style={[styles.category, active && styles.activeCategory]}
                   >
                     <Ionicons
                       name={item.icon}
                       size={21}
-                      color={
-                        active
-                          ? colors.white
-                          : colors.primary
-                      }
+                      color={active ? colors.white : colors.primary}
                     />
 
                     <Text
                       style={[
                         styles.categoryText,
-                        active &&
-                          styles.activeCategoryText,
+                        active && styles.activeCategoryText,
                       ]}
                     >
                       {item.name}
@@ -256,10 +307,93 @@ const HomeScreen = () => {
               }}
             />
 
+            <Modal
+              visible={isLocationModalVisible}
+              transparent
+              animationType="slide"
+              onRequestClose={() => setIsLocationModalVisible(false)}
+            >
+              <View style={styles.modalContainer}>
+                {/* Dark background */}
+                <Pressable
+                  style={styles.modalBackdrop}
+                  onPress={() => setIsLocationModalVisible(false)}
+                />
+
+                {/* Bottom sheet */}
+                <View style={styles.modalSheet}>
+                  <Text style={styles.modalTitle}>Delivery address</Text>
+
+                  {loadingAddresses && (
+                    <Text style={styles.modalEmptyText}>
+                      Loading addresses...
+                    </Text>
+                  )}
+
+                  {!loadingAddresses && addresses.length === 0 && (
+                    <Text style={styles.modalEmptyText}>
+                      You don't have any saved addresses yet.
+                    </Text>
+                  )}
+
+                  <FlatList
+                    data={addresses}
+                    keyExtractor={(item) => String(item.id)}
+                    renderItem={({ item }) => {
+                      const active = selectedAddress?.id === item.id;
+
+                      return (
+                        <Pressable
+                          style={[
+                            styles.addressOption,
+                            active && styles.activeAddressOption,
+                          ]}
+                          onPress={() => {
+                            setSelectedAddress(item);
+                            setIsLocationModalVisible(false);
+                          }}
+                        >
+                          <Ionicons
+                            name={
+                              active ? "radio-button-on" : "radio-button-off"
+                            }
+                            size={20}
+                            color={active ? colors.primary : colors.textLight}
+                          />
+
+                          <View style={styles.addressOptionText}>
+                            <Text style={styles.addressOptionLine}>
+                              {item.addressLine1}
+                              {item.addressLine2
+                                ? `, ${item.addressLine2}`
+                                : ""}
+                            </Text>
+
+                            <Text style={styles.addressOptionSubLine}>
+                              {item.city}, {item.state} {item.postalCode}
+                            </Text>
+                          </View>
+                        </Pressable>
+                      );
+                    }}
+                  />
+
+                  <Pressable
+                    style={styles.addAddressButton}
+                    onPress={() => {
+                      setIsLocationModalVisible(false);
+                      router.push("/profile");
+                    }}
+                  >
+                    <Ionicons name="add" size={18} color={colors.primary} />
+
+                    <Text style={styles.addAddressText}>Add new address</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </Modal>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
-                Nearby restaurants
-              </Text>
+              <Text style={styles.sectionTitle}>Nearby restaurants</Text>
 
               <Text style={styles.restaurantCount}>
                 {filteredRestaurants.length} places
@@ -275,9 +409,7 @@ const HomeScreen = () => {
               color={colors.textLight}
             />
 
-            <Text style={styles.emptyTitle}>
-              No restaurants found
-            </Text>
+            <Text style={styles.emptyTitle}>No restaurants found</Text>
 
             <Text style={styles.emptyText}>
               Try another search or category.
@@ -311,7 +443,9 @@ const styles = StyleSheet.create({
 
   greeting: {
     color: colors.textSecondary,
-    fontSize: 13,
+    fontSize: 18,
+    marginTop: 8,
+    marginBottom: 4,
   },
 
   userName: {
@@ -321,6 +455,90 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
+  locationTextContainer: {
+    flex: 1,
+  },
+
+  modalContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+
+  modalBackdrop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+
+  modalSheet: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    maxHeight: "70%",
+  },
+
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.text,
+    marginBottom: 14,
+  },
+
+  modalEmptyText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    marginBottom: 14,
+  },
+
+  addressOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F1F1",
+  },
+
+  activeAddressOption: {
+    backgroundColor: "#FFF6F2",
+  },
+
+  addressOptionText: {
+    marginLeft: 12,
+    flex: 1,
+  },
+
+  addressOptionLine: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+
+  addressOptionSubLine: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
+  },
+
+  addAddressButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+
+  addAddressText: {
+    color: colors.primary,
+    fontWeight: "700",
+    marginLeft: 6,
+  },
   profileButton: {
     width: 44,
     height: 44,

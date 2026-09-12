@@ -1,4 +1,4 @@
-import React, {
+import {
   createContext,
   ReactNode,
   useCallback,
@@ -7,26 +7,35 @@ import React, {
   useState,
 } from "react";
 
-import { Order, OrderItem } from "../types/order";
-
-interface CreateOrderParams {
-  items: OrderItem[];
-  subtotal: number;
-  deliveryFee: number;
-  tax: number;
-  total: number;
-  deliveryAddress: string;
-  paymentMethod: string;
-}
+import {
+  cancelOrder as cancelOrderApi,
+  createOrder as createOrderApi,
+  getOrderById as getOrderByIdApi,
+  getOrders as getOrdersApi,
+  getOrderStatus as getOrderStatusApi,
+} from "../services/orderApi";
+import { CreateOrderRequest, Order, OrderStatusResponse } from "../types/order";
 
 interface OrderContextType {
   orders: Order[];
 
-  createOrder: (
-    orderData: CreateOrderParams
-  ) => Order;
+  loading: boolean;
 
-  getOrderById: (orderId: string) => Order | undefined;
+  createOrder: (
+    userId: number,
+    orderData: CreateOrderRequest,
+  ) => Promise<Order>;
+
+  fetchOrders: (userId: number) => Promise<void>;
+
+  getOrderById: (userId: number, orderId: number) => Promise<Order>;
+
+  getOrderStatus: (
+    userId: number,
+    orderId: number,
+  ) => Promise<OrderStatusResponse>;
+
+  cancelOrder: (userId: number, orderId: number) => Promise<Order>;
 
   clearOrders: () => void;
 }
@@ -35,68 +44,95 @@ interface OrderProviderProps {
   children: ReactNode;
 }
 
-const OrderContext = createContext<
-  OrderContextType | undefined
->(undefined);
+const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
-export const OrderProvider = ({
-  children,
-}: OrderProviderProps) => {
+export const OrderProvider = ({ children }: OrderProviderProps) => {
   const [orders, setOrders] = useState<Order[]>([]);
 
+  const [loading, setLoading] = useState<boolean>(false);
+
   /**
-   * Creates a new order from the checkout information.
-   *
-   * In a real application this would normally call
-   * an API. For this assessment we generate the order
-   * locally because we're using mock data only.
+   * Create a new order using backend API.
    */
   const createOrder = useCallback(
-    (orderData: CreateOrderParams): Order => {
-      const newOrder: Order = {
-        id: `ORD-${Date.now()}`,
-        items: orderData.items,
+    async (userId: number, orderData: CreateOrderRequest): Promise<Order> => {
+      try {
+        setLoading(true);
 
-        subtotal: orderData.subtotal,
-        deliveryFee: orderData.deliveryFee,
-        tax: orderData.tax,
-        total: orderData.total,
+        const newOrder = await createOrderApi(userId, orderData);
 
-        deliveryAddress:
-          orderData.deliveryAddress,
+        /*
+         * Add newly created order
+         * at the beginning of the list.
+         */
+        setOrders((currentOrders) => [newOrder, ...currentOrders]);
 
-        paymentMethod:
-          orderData.paymentMethod,
-
-        status: "Preparing",
-
-        createdAt: new Date().toISOString(),
-      };
-
-      setOrders((currentOrders) => [
-        newOrder,
-        ...currentOrders,
-      ]);
-
-      return newOrder;
+        return newOrder;
+      } finally {
+        setLoading(false);
+      }
     },
-    []
+    [],
   );
 
   /**
-   * Finds an order by its ID.
+   * Get all orders of logged-in user.
+   */
+  const fetchOrders = useCallback(async (userId: number): Promise<void> => {
+    try {
+      setLoading(true);
+
+      const userOrders = await getOrdersApi(userId);
+
+      setOrders(userOrders);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /**
+   * Get one order by ID.
    */
   const getOrderById = useCallback(
-    (orderId: string) => {
-      return orders.find(
-        (order) => order.id === orderId
-      );
+    async (userId: number, orderId: number): Promise<Order> => {
+      return await getOrderByIdApi(userId, orderId);
     },
-    [orders]
+    [],
   );
 
   /**
-   * Useful for development/testing.
+   * Get current order status.
+   */
+  const getOrderStatus = useCallback(
+    async (userId: number, orderId: number): Promise<OrderStatusResponse> => {
+      return await getOrderStatusApi(userId, orderId);
+    },
+    [],
+  );
+
+  /**
+   * Cancel an order.
+   */
+  const cancelOrder = useCallback(
+    async (userId: number, orderId: number): Promise<Order> => {
+      const updatedOrder = await cancelOrderApi(userId, orderId);
+
+      /*
+       * Update the order in local state.
+       */
+      setOrders((currentOrders) =>
+        currentOrders.map((order) =>
+          order.id === updatedOrder.id ? updatedOrder : order,
+        ),
+      );
+
+      return updatedOrder;
+    },
+    [],
+  );
+
+  /**
+   * Clear local order state.
    */
   const clearOrders = useCallback(() => {
     setOrders([]);
@@ -105,22 +141,31 @@ export const OrderProvider = ({
   const value = useMemo(
     () => ({
       orders,
+      loading,
+
       createOrder,
+      fetchOrders,
       getOrderById,
+      getOrderStatus,
+      cancelOrder,
       clearOrders,
     }),
+
     [
       orders,
+      loading,
+
       createOrder,
+      fetchOrders,
       getOrderById,
+      getOrderStatus,
+      cancelOrder,
       clearOrders,
-    ]
+    ],
   );
 
   return (
-    <OrderContext.Provider value={value}>
-      {children}
-    </OrderContext.Provider>
+    <OrderContext.Provider value={value}>{children}</OrderContext.Provider>
   );
 };
 
@@ -128,9 +173,7 @@ export const useOrders = (): OrderContextType => {
   const context = useContext(OrderContext);
 
   if (context === undefined) {
-    throw new Error(
-      "useOrders must be used inside an OrderProvider"
-    );
+    throw new Error("useOrders must be used inside an OrderProvider");
   }
 
   return context;

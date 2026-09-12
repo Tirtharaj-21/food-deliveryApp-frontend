@@ -1,10 +1,10 @@
 export interface Restaurant {
-  id: string;
+  id: number;
   name: string;
-  image: string;
   cuisine: string;
+  categories: string[];
   rating: number;
   deliveryTime: string;
   deliveryFee: number;
-  categories: string[];
+  image: string;
 }

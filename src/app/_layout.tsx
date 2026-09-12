@@ -1,5 +1,5 @@
 import { router, Stack, useSegments } from "expo-router";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 
 import { AppProvider } from "../context/AppProvider";
 import { useAuth } from "../context/AuthContext";
@@ -38,7 +38,6 @@ function NavigationGuard() {
       <Stack.Screen name="food/[id]" />
       <Stack.Screen name="checkout" />
       <Stack.Screen name="order/[id]" />
-      <Stack.Screen name="profile/edit" />
     </Stack>
   );
 }

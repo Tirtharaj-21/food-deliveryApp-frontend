@@ -6,6 +6,7 @@
     "@expo/ui": "~57.0.18",
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "axios": "^1.20.0",
     "expo": "^57.0.0",
     "expo-constants": "~57.0.18",
     "expo-device": "~57.0.2",
@@ -38,6 +39,8 @@
   },
   "scripts": {
     "start": "expo start",
+    "dev": "copy /Y .env.development .env.local && expo start -c",
+    "prod": "copy /Y .env.production .env.local && expo start -c",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",

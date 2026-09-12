@@ -1,4 +1,4 @@
-import BASE_URL from "./api";
+import BASE_URL from "../config/api";
 
 // GET CART
 export async function getCart() {
