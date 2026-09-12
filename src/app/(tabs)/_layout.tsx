@@ -1,25 +1,24 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import React from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import colors from "../../constants/colors";
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
 
-        tabBarActiveTintColor:
-          colors.primary,
+        tabBarActiveTintColor: colors.primary,
 
-        tabBarInactiveTintColor:
-          colors.textLight,
+        tabBarInactiveTintColor: colors.textLight,
 
         tabBarStyle: {
-          height: 68,
+          height: 62 + insets.bottom,
           paddingTop: 7,
-          paddingBottom: 8,
+          paddingBottom: 2 + insets.bottom,
           borderTopWidth: 0,
           backgroundColor: colors.white,
 
@@ -45,11 +44,7 @@ export default function TabsLayout() {
           title: "Home",
 
           tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="home-outline"
-              size={size}
-              color={color}
-            />
+            <Ionicons name="home-outline" size={size} color={color} />
           ),
         }}
       />
@@ -60,11 +55,7 @@ export default function TabsLayout() {
           title: "Search",
 
           tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="search-outline"
-              size={size}
-              color={color}
-            />
+            <Ionicons name="search-outline" size={size} color={color} />
           ),
         }}
       />
@@ -75,11 +66,7 @@ export default function TabsLayout() {
           title: "Cart",
 
           tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="cart-outline"
-              size={size}
-              color={color}
-            />
+            <Ionicons name="cart-outline" size={size} color={color} />
           ),
         }}
       />
@@ -90,11 +77,7 @@ export default function TabsLayout() {
           title: "Orders",
 
           tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="receipt-outline"
-              size={size}
-              color={color}
-            />
+            <Ionicons name="receipt-outline" size={size} color={color} />
           ),
         }}
       />
@@ -105,11 +88,7 @@ export default function TabsLayout() {
           title: "Profile",
 
           tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="person-outline"
-              size={size}
-              color={color}
-            />
+            <Ionicons name="person-outline" size={size} color={color} />
           ),
         }}
       />
