@@ -1,6 +1,7 @@
 import { BASE_URL } from "../config/api";
 import { Food } from "../types/food";
 import { Restaurant } from "../types/restaurant";
+
 export const getRestaurants = async (): Promise<Restaurant[]> => {
   const response = await fetch(`${BASE_URL}/restaurant/getAllRestaurants`);
 

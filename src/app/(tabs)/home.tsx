@@ -182,23 +182,6 @@ const HomeScreen = () => {
               </Pressable>
             </View>
 
-            {/* <View style={styles.locationContainer}>
-              <Ionicons name="location" size={17} color={colors.primary} />
-
-              <View>
-                <Text style={styles.locationLabel}>Delivering to</Text>
-
-                <Text style={styles.location}>Home • 123 Main Street</Text>
-              </View>
-
-              <Ionicons
-                name="chevron-down"
-                size={16}
-                color={colors.textSecondary}
-                style={styles.locationArrow}
-              />
-            </View> */}
-
             <Pressable
               style={styles.locationContainer}
               onPress={() => setIsLocationModalVisible(true)}
@@ -257,7 +240,10 @@ const HomeScreen = () => {
                   On your first order
                 </Text>
 
-                <Pressable style={styles.bannerButton}>
+                <Pressable
+                  style={styles.bannerButton}
+                  onPress={() => router.push("/offers")}
+                >
                   <Text style={styles.bannerButtonText}>Order now</Text>
                 </Pressable>
               </View>
