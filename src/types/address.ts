@@ -1,19 +1,18 @@
 export interface Address {
   id: number;
   userId: number;
-  addressLine1: string;
-  addressLine2?: string;
+  addressLine: string;
   city: string;
   state: string;
-  country: string;
-  postalCode: string;
+  pincode: string;
 }
 
 export interface AddressRequest {
-  addressLine1: string;
-  addressLine2?: string;
+  label?: string;
+  addressLine: string;
   city: string;
   state: string;
-  country: string;
-  postalCode: string;
+  pincode: string;
+  latitude?: number;
+  longitude?: number;
 }

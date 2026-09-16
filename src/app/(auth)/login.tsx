@@ -44,7 +44,10 @@ const LoginScreen = () => {
     try {
       setAuthError("");
 
-      await login(values.email.trim(), values.password);
+      await login({
+        email: values.email.trim(),
+        password: values.password,
+      });
 
       // AuthContext updates the user state.
       // Root routing will then render the authenticated app.

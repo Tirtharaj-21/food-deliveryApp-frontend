@@ -21,6 +21,7 @@ import { getAddresses } from "../../services/addressApi";
 import { getRestaurants } from "../../services/restaurantApi";
 import { Address } from "../../types/address";
 import { Restaurant } from "../../types/restaurant";
+import { number } from "yup";
 
 const categories = [
   {
@@ -99,7 +100,7 @@ const HomeScreen = () => {
     try {
       setLoadingAddresses(true);
 
-      const data = await getAddresses(Number(user.id));
+      const data = await getAddresses(Number(user.userId));
 
       setAddresses(data);
 
@@ -126,23 +127,23 @@ const HomeScreen = () => {
     const normalizedSearch = search.trim().toLowerCase();
 
     return restaurants.filter((restaurant) => {
+      const cuisine = restaurant.cuisine ?? "";
+
       const matchesSearch =
         normalizedSearch.length === 0 ||
         restaurant.name.toLowerCase().includes(normalizedSearch) ||
-        restaurant.cuisine.toLowerCase().includes(normalizedSearch);
+        cuisine.toLowerCase().includes(normalizedSearch);
 
       const matchesCategory =
         selectedCategory === "all" ||
-        restaurant.categories.some((category) =>
-          category.toLowerCase().includes(selectedCategory),
-        );
+        cuisine.toLowerCase().includes(selectedCategory.toLowerCase());
 
       return matchesSearch && matchesCategory;
     });
   }, [restaurants, search, selectedCategory]);
 
   const locationLabel = selectedAddress
-    ? `${selectedAddress.addressLine1}, ${selectedAddress.city}`
+    ? `${selectedAddress.addressLine}, ${selectedAddress.city}`
     : "Add a delivery address";
 
   return (
@@ -349,14 +350,11 @@ const HomeScreen = () => {
 
                           <View style={styles.addressOptionText}>
                             <Text style={styles.addressOptionLine}>
-                              {item.addressLine1}
-                              {item.addressLine2
-                                ? `, ${item.addressLine2}`
-                                : ""}
+                              {item.addressLine}
                             </Text>
 
                             <Text style={styles.addressOptionSubLine}>
-                              {item.city}, {item.state} {item.postalCode}
+                              {item.city}, {item.state} {item.pincode}
                             </Text>
                           </View>
                         </Pressable>

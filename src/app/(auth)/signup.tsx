@@ -34,36 +34,32 @@ const initialValues: SignupFormValues = {
 };
 
 const SignupScreen = () => {
-  const { signup } = useAuth();
+  const { register } = useAuth();
 
-  const [showPassword, setShowPassword] =
-    useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [authError, setAuthError] = useState("");
 
   const handleSignup = async (
     values: SignupFormValues,
-    { setSubmitting }: FormikHelpers<SignupFormValues>
+    { setSubmitting }: FormikHelpers<SignupFormValues>,
   ) => {
     try {
       setAuthError("");
 
-      await signup(
-        values.name.trim(),
-        values.email.trim(),
-        values.password
-      );
+      await register({
+        name: values.name.trim(),
+        email: values.email.trim(),
+        password: values.password,
+      });
 
       router.replace("/(tabs)/home");
     } catch (error) {
       console.error("Signup failed:", error);
 
-      setAuthError(
-        "Unable to create your account. Please try again."
-      );
+      setAuthError("Unable to create your account. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -72,50 +68,30 @@ const SignupScreen = () => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={
-        Platform.OS === "ios"
-          ? "padding"
-          : undefined
-      }
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Pressable
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color={colors.text}
-          />
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
 
         <View style={styles.header}>
-          <Text style={styles.title}>
-            Create your account
-          </Text>
+          <Text style={styles.title}>Create your account</Text>
 
           <Text style={styles.subtitle}>
-            Join Foodie and start ordering delicious
-            meals.
+            Join Foodie and start ordering delicious meals.
           </Text>
         </View>
 
         {authError ? (
           <View style={styles.errorBanner}>
-            <Ionicons
-              name="alert-circle"
-              size={20}
-              color={colors.danger}
-            />
+            <Ionicons name="alert-circle" size={20} color={colors.danger} />
 
-            <Text style={styles.errorBannerText}>
-              {authError}
-            </Text>
+            <Text style={styles.errorBannerText}>{authError}</Text>
           </View>
         ) : null}
 
@@ -174,25 +150,17 @@ const SignupScreen = () => {
               />
 
               <Pressable
-                onPress={() =>
-                  setShowPassword((current) => !current)
-                }
+                onPress={() => setShowPassword((current) => !current)}
                 style={styles.passwordToggle}
               >
                 <Ionicons
-                  name={
-                    showPassword
-                      ? "eye-off-outline"
-                      : "eye-outline"
-                  }
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
                   size={18}
                   color={colors.textSecondary}
                 />
 
                 <Text style={styles.passwordToggleText}>
-                  {showPassword
-                    ? "Hide password"
-                    : "Show password"}
+                  {showPassword ? "Hide password" : "Show password"}
                 </Text>
               </Pressable>
 
@@ -203,36 +171,24 @@ const SignupScreen = () => {
                 autoCapitalize="none"
                 leftIcon="shield-checkmark-outline"
                 value={values.confirmPassword}
-                onChangeText={handleChange(
-                  "confirmPassword"
-                )}
+                onChangeText={handleChange("confirmPassword")}
                 onBlur={handleBlur("confirmPassword")}
                 error={errors.confirmPassword}
                 touched={touched.confirmPassword}
               />
 
               <Pressable
-                onPress={() =>
-                  setShowConfirmPassword(
-                    (current) => !current
-                  )
-                }
+                onPress={() => setShowConfirmPassword((current) => !current)}
                 style={styles.passwordToggle}
               >
                 <Ionicons
-                  name={
-                    showConfirmPassword
-                      ? "eye-off-outline"
-                      : "eye-outline"
-                  }
+                  name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
                   size={18}
                   color={colors.textSecondary}
                 />
 
                 <Text style={styles.passwordToggleText}>
-                  {showConfirmPassword
-                    ? "Hide password"
-                    : "Show password"}
+                  {showConfirmPassword ? "Hide password" : "Show password"}
                 </Text>
               </Pressable>
 
@@ -247,19 +203,10 @@ const SignupScreen = () => {
         </Formik>
 
         <View style={styles.loginContainer}>
-          <Text style={styles.loginText}>
-            Already have an account?
-          </Text>
+          <Text style={styles.loginText}>Already have an account?</Text>
 
-          <Pressable
-            onPress={() =>
-              router.replace("/(auth)/login")
-            }
-          >
-            <Text style={styles.loginLink}>
-              {" "}
-              Sign In
-            </Text>
+          <Pressable onPress={() => router.replace("/(auth)/login")}>
+            <Text style={styles.loginLink}> Sign In</Text>
           </Pressable>
         </View>
       </ScrollView>

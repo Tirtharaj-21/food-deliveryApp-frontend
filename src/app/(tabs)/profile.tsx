@@ -19,23 +19,22 @@ import {
   createAddress,
   deleteAddress,
   getAddresses,
+  getAddressById,
 } from "../../services/addressApi";
 import { getProfile, updateProfile } from "../../services/profileApi";
 import type { Address, AddressRequest } from "../../types/address";
 import type { Profile } from "../../types/profile";
 
 const EMPTY_ADDRESS_FORM: AddressRequest = {
-  addressLine1: "",
-  addressLine2: "",
+  addressLine: "",
   city: "",
   state: "",
-  country: "",
-  postalCode: "",
+  pincode: "",
 };
 
 const ProfileScreen = () => {
   const { user, logout } = useAuth();
-  const userId = user ? Number(user.id) : null;
+  const userId = user ? Number(user.userId) : null;
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -56,8 +55,9 @@ const ProfileScreen = () => {
   const [savingAddress, setSavingAddress] = useState(false);
 
   const loadData = useCallback(async () => {
-    if (!userId) {
+    if (userId == null || Number.isNaN(userId)) {
       setLoading(false);
+      setError("User information is missing. Please log in again.");
       return;
     }
 
@@ -66,10 +66,14 @@ const ProfileScreen = () => {
       setError(null);
 
       const [profileData, addressData] = await Promise.all([
-        getProfile(userId),
+        getProfile(),
         getAddresses(userId),
       ]);
 
+      console.log(
+        "PROFILE ADDRESS DATA:",
+        JSON.stringify(addressData, null, 2),
+      );
       setProfile(profileData);
       setProfileForm({
         firstName: profileData.firstName,
@@ -119,14 +123,13 @@ const ProfileScreen = () => {
   const handleAddAddress = async () => {
     if (!userId) return;
 
-    const { addressLine1, city, state, country, postalCode } = addressForm;
+    const { addressLine, city, state, pincode } = addressForm;
 
     if (
-      !addressLine1.trim() ||
-      !city.trim() ||
-      !state.trim() ||
-      !country.trim() ||
-      !postalCode.trim()
+      !addressLine?.trim() ||
+      !city?.trim() ||
+      !state?.trim() ||
+      !pincode?.trim()
     ) {
       Alert.alert("Please fill in all required address fields.");
       return;
@@ -135,27 +138,47 @@ const ProfileScreen = () => {
     try {
       setSavingAddress(true);
 
-      const created = await createAddress(userId, {
-        addressLine1: addressLine1.trim(),
-        addressLine2: addressForm.addressLine2?.trim() || undefined,
+      // 1. Save address
+      const addressId = await createAddress(userId, {
+        addressLine: addressLine.trim(),
         city: city.trim(),
         state: state.trim(),
-        country: country.trim(),
-        postalCode: postalCode.trim(),
+        pincode: pincode.trim(),
       });
 
-      setAddresses((prev) => [...prev, created]);
+      console.log("CREATED ADDRESS ID:", addressId);
+
+      // 2. Get complete address
+      const createdAddress = await getAddressById(addressId, userId);
+
+      console.log("CREATED ADDRESS:", JSON.stringify(createdAddress, null, 2));
+
+      // 3. Add complete address to state
+      setAddresses((prev) => [...prev, createdAddress]);
+
+      // 4. Reset form
       setAddressForm(EMPTY_ADDRESS_FORM);
       setIsAddingAddress(false);
-    } catch (err) {
-      console.error("Failed to add address:", err);
-      Alert.alert("Something went wrong adding that address.");
+    } catch (err: any) {
+      console.error("ADD ADDRESS ERROR");
+      console.error("Message:", err?.message);
+      console.error("Status:", err?.response?.status);
+      console.error("Response:", err?.response?.data);
+      console.error("URL:", err?.config?.url);
+      console.error("Method:", err?.config?.method);
+
+      Alert.alert(
+        "Add Address Error",
+        err?.response?.data?.message ||
+          err?.message ||
+          "Something went wrong adding that address.",
+      );
     } finally {
       setSavingAddress(false);
     }
   };
 
-  const handleDeleteAddress = (addressId: number) => {
+  const handleDeleteAddress = (addressId: number, userId: number) => {
     Alert.alert(
       "Remove address",
       "Are you sure you want to remove this address?",
@@ -166,7 +189,7 @@ const ProfileScreen = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteAddress(addressId);
+              await deleteAddress(userId, addressId);
               setAddresses((prev) =>
                 prev.filter((item) => item.id !== addressId),
               );
@@ -314,19 +337,19 @@ const ProfileScreen = () => {
         {addresses.map((address) => (
           <View key={address.id} style={styles.addressCard}>
             <View style={styles.addressInfo}>
-              <Text style={styles.addressLine}>
-                {address.addressLine1}
-                {address.addressLine2 ? `, ${address.addressLine2}` : ""}
-              </Text>
+              <Text style={styles.addressLine}>{address.addressLine}</Text>
 
               <Text style={styles.addressSubLine}>
-                {address.city}, {address.state} {address.postalCode}
+                {address.city}, {address.state} {address.pincode}
               </Text>
-
-              <Text style={styles.addressSubLine}>{address.country}</Text>
             </View>
 
-            <Pressable onPress={() => handleDeleteAddress(address.id)}>
+            <Pressable
+              onPress={() => {
+                if (!user) return;
+                handleDeleteAddress(address.id, user.userId);
+              }}
+            >
               <Ionicons
                 name="trash-outline"
                 size={20}
@@ -338,21 +361,12 @@ const ProfileScreen = () => {
 
         {isAddingAddress && (
           <View style={styles.formCard}>
-            <Text style={styles.formLabel}>Address line 1</Text>
+            <Text style={styles.formLabel}>Address line </Text>
             <TextInput
               style={styles.input}
-              value={addressForm.addressLine1}
+              value={addressForm.addressLine}
               onChangeText={(text) =>
-                setAddressForm((prev) => ({ ...prev, addressLine1: text }))
-              }
-            />
-
-            <Text style={styles.formLabel}>Address line 2 (optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={addressForm.addressLine2}
-              onChangeText={(text) =>
-                setAddressForm((prev) => ({ ...prev, addressLine2: text }))
+                setAddressForm((prev) => ({ ...prev, addressLine: text }))
               }
             />
 
@@ -374,21 +388,12 @@ const ProfileScreen = () => {
               }
             />
 
-            <Text style={styles.formLabel}>Country</Text>
+            <Text style={styles.formLabel}>Pincode</Text>
             <TextInput
               style={styles.input}
-              value={addressForm.country}
+              value={addressForm.pincode}
               onChangeText={(text) =>
-                setAddressForm((prev) => ({ ...prev, country: text }))
-              }
-            />
-
-            <Text style={styles.formLabel}>Postal code</Text>
-            <TextInput
-              style={styles.input}
-              value={addressForm.postalCode}
-              onChangeText={(text) =>
-                setAddressForm((prev) => ({ ...prev, postalCode: text }))
+                setAddressForm((prev) => ({ ...prev, pincode: text }))
               }
             />
 

@@ -7,198 +7,100 @@ import React, {
   useState,
 } from "react";
 
-import {
-  getAuthUser,
-  removeAuthUser,
-  saveAuthUser,
-} from "../services/storage";
+import { getAuthUser, removeAuthUser } from "../services/storage";
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-}
+import {
+  loginUser,
+  registerUser,
+  LoginRequest,
+  RegisterRequest,
+  LoginResponse,
+} from "../services/authApi";
 
 interface AuthContextType {
-  user: User | null;
+  user: LoginResponse | null;
+  loading: boolean;
 
-  /**
-   * True while the application is checking
-   * AsyncStorage for an existing session.
-   */
-  isLoading: boolean;
+  login: (request: LoginRequest) => Promise<LoginResponse>;
 
-  login: (
-    email: string,
-    password: string
-  ) => Promise<void>;
-
-  signup: (
-    name: string,
-    email: string,
-    password: string
-  ) => Promise<void>;
+  register: (request: RegisterRequest) => Promise<void>;
 
   logout: () => Promise<void>;
 }
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-const AuthContext = createContext<
-  AuthContextType | undefined
->(undefined);
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [user, setUser] = useState<LoginResponse | null>(null);
 
-export const AuthProvider = ({
-  children,
-}: AuthProviderProps) => {
-  const [user, setUser] =
-    useState<User | null>(null);
-
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
 
   /**
-   * Check for an existing login session when
-   * the application starts.
+   * Load saved user when application starts
    */
-  useEffect(() => {
-    const restoreSession = async () => {
-      try {
-        const storedUser =
-          await getAuthUser();
+  const loadUser = useCallback(async () => {
+    try {
+      const savedUser = await getAuthUser();
 
-        if (storedUser) {
-          setUser(storedUser);
-        }
-      } catch (error) {
-        console.error(
-          "Failed to restore session:",
-          error
+      if (savedUser) {
+        console.log(
+          "SAVED USER FROM STORAGE:",
+          JSON.stringify(savedUser, null, 2),
         );
-      } finally {
-        /**
-         * Important:
-         *
-         * We set loading to false only after
-         * AsyncStorage has been checked.
-         */
-        setIsLoading(false);
-      }
-    };
 
-    restoreSession();
+        console.log("SAVED USER ID:", savedUser.userId);
+
+        setUser(savedUser);
+      }
+    } catch (error) {
+      console.error("Failed to load authenticated user:", error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  /**
-   * Mock login.
-   *
-   * Since this assessment doesn't have a backend,
-   * we simply validate that credentials exist and
-   * create a local user object.
-   */
-  const login = useCallback(
-    async (
-      email: string,
-      password: string
-    ) => {
-      if (!email || !password) {
-        throw new Error(
-          "Email and password are required."
-        );
-      }
-
-      /**
-       * Simulate a network request.
-       */
-      await new Promise((resolve) =>
-        setTimeout(resolve, 700)
-      );
-
-      const loggedInUser: User = {
-        id: `user-${Date.now()}`,
-        name: email
-          .split("@")[0]
-          .replace(/^./, (char) =>
-            char.toUpperCase()
-          ),
-        email,
-      };
-
-      setUser(loggedInUser);
-
-      await saveAuthUser(
-        loggedInUser
-      );
-    },
-    []
-  );
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
 
   /**
-   * Mock signup.
+   * Login
    */
-  const signup = useCallback(
-    async (
-      name: string,
-      email: string,
-      password: string
-    ) => {
-      if (
-        !name ||
-        !email ||
-        !password
-      ) {
-        throw new Error(
-          "All fields are required."
-        );
-      }
+  const login = async (request: LoginRequest): Promise<LoginResponse> => {
+    const loggedInUser = await loginUser(request);
 
-      /**
-       * Simulate a network request.
-       */
-      await new Promise((resolve) =>
-        setTimeout(resolve, 700)
-      );
+    setUser(loggedInUser);
 
-      const newUser: User = {
-        id: `user-${Date.now()}`,
-        name,
-        email,
-      };
-
-      setUser(newUser);
-
-      await saveAuthUser(newUser);
-    },
-    []
-  );
+    return loggedInUser;
+  };
 
   /**
-   * Logout:
-   *
-   * 1. Remove persisted session.
-   * 2. Clear in-memory user.
-   *
-   * The navigation guard will then redirect
-   * the user to Login.
+   * Register
    */
-  const logout = useCallback(
-    async () => {
-      await removeAuthUser();
+  const register = async (request: RegisterRequest): Promise<void> => {
+    await registerUser(request);
+  };
 
-      setUser(null);
-    },
-    []
-  );
+  /**
+   * Logout
+   */
+  const logout = async (): Promise<void> => {
+    await removeAuthUser();
+
+    setUser(null);
+  };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isLoading,
+        loading,
         login,
-        signup,
+        register,
         logout,
       }}
     >
@@ -207,16 +109,15 @@ export const AuthProvider = ({
   );
 };
 
-export const useAuth =
-  (): AuthContextType => {
-    const context =
-      useContext(AuthContext);
+/**
+ * Access authentication context
+ */
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
 
-    if (context === undefined) {
-      throw new Error(
-        "useAuth must be used inside AuthProvider"
-      );
-    }
+  if (!context) {
+    throw new Error("useAuth must be used inside AuthProvider");
+  }
 
-    return context;
-  };
+  return context;
+};

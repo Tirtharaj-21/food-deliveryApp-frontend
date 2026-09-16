@@ -142,7 +142,7 @@ const RestaurantDetailScreen = () => {
             <View style={styles.heroContainer}>
               <Image
                 source={{
-                  uri: restaurant.image,
+                  uri: restaurant.imageUrl,
                 }}
                 style={styles.heroImage}
               />
@@ -189,7 +189,8 @@ const RestaurantDetailScreen = () => {
                   />
 
                   <Text style={styles.metaText}>
-                    {restaurant.deliveryFee === 0
+                    {restaurant.deliveryFee == null ||
+                    restaurant.deliveryFee === 0
                       ? "Free delivery"
                       : `$${restaurant.deliveryFee.toFixed(2)} delivery`}
                   </Text>

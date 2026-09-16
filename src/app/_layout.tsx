@@ -5,11 +5,11 @@ import { AppProvider } from "../context/AppProvider";
 import { useAuth } from "../context/AuthContext";
 
 function NavigationGuard() {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   const segments = useSegments();
 
   useEffect(() => {
-    if (isLoading) {
+    if (loading) {
       return;
     }
 
@@ -23,7 +23,7 @@ function NavigationGuard() {
     if (user && inAuthGroup) {
       router.replace("/(tabs)/home");
     }
-  }, [user, isLoading, segments]);
+  }, [user, loading, segments]);
 
   return (
     <Stack

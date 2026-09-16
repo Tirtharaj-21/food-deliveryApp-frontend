@@ -1,10 +1,15 @@
 export interface Restaurant {
   id: number;
   name: string;
-  cuisine: string;
-  categories: string[];
+  description: string;
+  imageUrl: string;
+  address: string;
+  phone: string;
+  city: string;
+  cuisine: string | null;
   rating: number;
-  deliveryTime: string;
-  deliveryFee: number;
-  image: string;
+  deliveryTime: string | null;
+  deliveryFee: number | null;
+  createdAt: string | null;
+  isActive: boolean;
 }
