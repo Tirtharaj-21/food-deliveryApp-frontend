@@ -1,9 +1,5 @@
 import React, { useEffect } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -13,10 +9,10 @@ import { useAuth } from "../../context/AuthContext";
 import { storage } from "../../services/storage";
 
 const SplashScreen = () => {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    if (isLoading) {
+    if (loading) {
       return;
     }
 
@@ -30,8 +26,7 @@ const SplashScreen = () => {
 
         // Otherwise determine whether onboarding has already
         // been completed on this device.
-        const onboardingCompleted =
-          await storage.hasCompletedOnboarding();
+        const onboardingCompleted = await storage.hasCompletedOnboarding();
 
         if (onboardingCompleted) {
           router.replace("/(auth)/login");
@@ -39,10 +34,7 @@ const SplashScreen = () => {
           router.replace("/(auth)/onboarding");
         }
       } catch (error) {
-        console.error(
-          "Failed to initialize application:",
-          error
-        );
+        console.error("Failed to initialize application:", error);
 
         // Safe fallback if storage fails.
         router.replace("/(auth)/login");
@@ -50,29 +42,21 @@ const SplashScreen = () => {
     };
 
     initializeApp();
-  }, [isLoading, user]);
+  }, [loading, user]);
 
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
-        <Ionicons
-          name="restaurant"
-          size={48}
-          color={colors.white}
-        />
+        <Ionicons name="restaurant" size={48} color={colors.white} />
       </View>
 
       <Text style={styles.title}>Foodie</Text>
 
-      <Text style={styles.subtitle}>
-        Delicious food, delivered to you.
-      </Text>
+      <Text style={styles.subtitle}>Delicious food, delivered to you.</Text>
 
       <View style={styles.loadingContainer}>
         <View style={styles.loadingDot} />
-        <Text style={styles.loadingText}>
-          Getting things ready...
-        </Text>
+        <Text style={styles.loadingText}>Getting things ready...</Text>
       </View>
     </View>
   );

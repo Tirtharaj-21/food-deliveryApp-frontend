@@ -33,22 +33,21 @@ const initialValues: LoginFormValues = {
 const LoginScreen = () => {
   const { login } = useAuth();
 
-  const [showPassword, setShowPassword] =
-    useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [authError, setAuthError] = useState("");
 
   const handleLogin = async (
     values: LoginFormValues,
-    { setSubmitting }: FormikHelpers<LoginFormValues>
+    { setSubmitting }: FormikHelpers<LoginFormValues>,
   ) => {
     try {
       setAuthError("");
 
-      await login(
-        values.email.trim(),
-        values.password
-      );
+      await login({
+        email: values.email.trim(),
+        password: values.password,
+      });
 
       // AuthContext updates the user state.
       // Root routing will then render the authenticated app.
@@ -56,9 +55,7 @@ const LoginScreen = () => {
     } catch (error) {
       console.error("Login failed:", error);
 
-      setAuthError(
-        "Unable to sign in. Please try again."
-      );
+      setAuthError("Unable to sign in. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -67,18 +64,14 @@ const LoginScreen = () => {
   const handleForgotPassword = () => {
     Alert.alert(
       "Forgot Password",
-      "Password reset is not connected to a backend in this assessment."
+      "Password reset is not connected to a backend in this assessment.",
     );
   };
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={
-        Platform.OS === "ios"
-          ? "padding"
-          : undefined
-      }
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
         contentContainerStyle={styles.content}
@@ -87,34 +80,21 @@ const LoginScreen = () => {
       >
         <View style={styles.header}>
           <View style={styles.logo}>
-            <Ionicons
-              name="restaurant"
-              size={28}
-              color={colors.white}
-            />
+            <Ionicons name="restaurant" size={28} color={colors.white} />
           </View>
 
-          <Text style={styles.title}>
-            Welcome back!
-          </Text>
+          <Text style={styles.title}>Welcome back!</Text>
 
           <Text style={styles.subtitle}>
-            Sign in to continue ordering your favorite
-            food.
+            Sign in to continue ordering your favorite food.
           </Text>
         </View>
 
         {authError ? (
           <View style={styles.errorBanner}>
-            <Ionicons
-              name="alert-circle"
-              size={20}
-              color={colors.danger}
-            />
+            <Ionicons name="alert-circle" size={20} color={colors.danger} />
 
-            <Text style={styles.errorBannerText}>
-              {authError}
-            </Text>
+            <Text style={styles.errorBannerText}>{authError}</Text>
           </View>
         ) : null}
 
@@ -161,25 +141,17 @@ const LoginScreen = () => {
               />
 
               <Pressable
-                onPress={() =>
-                  setShowPassword((current) => !current)
-                }
+                onPress={() => setShowPassword((current) => !current)}
                 style={styles.passwordToggle}
               >
                 <Ionicons
-                  name={
-                    showPassword
-                      ? "eye-off-outline"
-                      : "eye-outline"
-                  }
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
                   size={18}
                   color={colors.textSecondary}
                 />
 
                 <Text style={styles.passwordToggleText}>
-                  {showPassword
-                    ? "Hide password"
-                    : "Show password"}
+                  {showPassword ? "Hide password" : "Show password"}
                 </Text>
               </Pressable>
 
@@ -187,9 +159,7 @@ const LoginScreen = () => {
                 onPress={handleForgotPassword}
                 style={styles.forgotButton}
               >
-                <Text style={styles.forgotText}>
-                  Forgot Password?
-                </Text>
+                <Text style={styles.forgotText}>Forgot Password?</Text>
               </Pressable>
 
               <CustomButton
@@ -203,19 +173,10 @@ const LoginScreen = () => {
         </Formik>
 
         <View style={styles.signupContainer}>
-          <Text style={styles.signupText}>
-            Don't have an account?
-          </Text>
+          <Text style={styles.signupText}>Don't have an account?</Text>
 
-          <Pressable
-            onPress={() =>
-              router.push("/(auth)/signup")
-            }
-          >
-            <Text style={styles.signupLink}>
-              {" "}
-              Sign Up
-            </Text>
+          <Pressable onPress={() => router.push("/(auth)/signup")}>
+            <Text style={styles.signupLink}> Sign Up</Text>
           </Pressable>
         </View>
 

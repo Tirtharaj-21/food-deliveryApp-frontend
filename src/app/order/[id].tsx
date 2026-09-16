@@ -1,19 +1,22 @@
-import React from "react";
+import { useEffect, useState } from "react";
+
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 
-import {
-  useLocalSearchParams
-} from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 
 import { Ionicons } from "@expo/vector-icons";
 
 import colors from "../../constants/colors";
+
 import { useOrders } from "../../context/OrderContext";
+
+import { Order } from "../../types/order";
 
 const OrderDetailsScreen = () => {
   const { id } = useLocalSearchParams<{
@@ -22,93 +25,130 @@ const OrderDetailsScreen = () => {
 
   const { getOrderById } = useOrders();
 
-  const order = getOrderById(id);
+  const [order, setOrder] = useState<Order | null>(null);
 
-  if (!order) {
+  const [loading, setLoading] = useState(true);
+
+  const [error, setError] = useState<string | null>(null);
+
+  /*
+   * Temporary user ID.
+   *
+   * Later replace this with the
+   * logged-in user's ID from AuthContext.
+   */
+  const userId = 1;
+
+  useEffect(() => {
+    const fetchOrder = async () => {
+      try {
+        setLoading(true);
+
+        setError(null);
+
+        /*
+         * Expo Router gives us the ID
+         * as a string.
+         *
+         * Example:
+         *
+         * "101"
+         *
+         * Backend expects Long/number.
+         */
+        const orderId = Number(id);
+
+        if (Number.isNaN(orderId)) {
+          throw new Error("Invalid order ID");
+        }
+
+        const orderData = await getOrderById(userId, orderId);
+
+        setOrder(orderData);
+      } catch (error) {
+        console.error("Failed to load order:", error);
+
+        setError("Failed to load order");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrder();
+  }, [id, getOrderById]);
+
+  /*
+   * Loading state
+   */
+  if (loading) {
     return (
       <View style={styles.center}>
-        <Text style={styles.notFound}>
-          Order not found
-        </Text>
+        <ActivityIndicator size="large" color={colors.primary} />
+
+        <Text style={styles.loadingText}>Loading order...</Text>
       </View>
     );
   }
 
+  /*
+   * Error / order not found
+   */
+  if (error || !order) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.notFound}>{error ?? "Order not found"}</Text>
+      </View>
+    );
+  }
+
+  /*
+   * Order details
+   */
   return (
     <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={
-          styles.content
-        }
+        contentContainerStyle={styles.content}
       >
+        {/* Header */}
+
         <View style={styles.header}>
-          <Ionicons
-            name="checkmark-circle"
-            size={45}
-            color={colors.primary}
-          />
+          <Ionicons name="checkmark-circle" size={45} color={colors.primary} />
 
-          <Text style={styles.title}>
-            Order Confirmed
-          </Text>
+          <Text style={styles.title}>Order Confirmed</Text>
 
-          <Text style={styles.orderId}>
-            {order.id}
-          </Text>
+          <Text style={styles.orderId}>Order #{order.id}</Text>
 
           <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>
-              {order.status}
-            </Text>
+            <Text style={styles.statusText}>{order.status}</Text>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>
-          Items
-        </Text>
+        {/* Items */}
+
+        <Text style={styles.sectionTitle}>Items</Text>
 
         <View style={styles.card}>
           {order.items.map((item) => (
-            <View
-              key={item.id}
-              style={styles.itemRow}
-            >
-              <View
-                style={styles.quantityBadge}
-              >
-                <Text
-                  style={
-                    styles.quantityText
-                  }
-                >
-                  {item.quantity}x
-                </Text>
+            <View key={item.id} style={styles.itemRow}>
+              <View style={styles.quantityBadge}>
+                <Text style={styles.quantityText}>{item.quantity}x</Text>
               </View>
 
-              <Text
-                style={styles.itemName}
-                numberOfLines={1}
-              >
+              <Text style={styles.itemName} numberOfLines={1}>
                 {item.name}
               </Text>
 
-              <Text
-                style={styles.itemPrice}
-              >
-                $
-                {(
-                  item.price *
-                  item.quantity
-                ).toFixed(2)}
+              <Text style={styles.itemPrice}>
+                ${(item.price * item.quantity).toFixed(2)}
               </Text>
             </View>
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>
-          Delivery
-        </Text>
+        {/* Delivery */}
+
+        <Text style={styles.sectionTitle}>Delivery</Text>
 
         <View style={styles.card}>
           <View style={styles.infoRow}>
@@ -119,90 +159,59 @@ const OrderDetailsScreen = () => {
             />
 
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>
-                Delivery Address
-              </Text>
+              <Text style={styles.infoLabel}>Delivery Address</Text>
 
-              <Text style={styles.infoValue}>
-                {order.deliveryAddress}
-              </Text>
+              <Text style={styles.infoValue}>{order.deliveryAddress}</Text>
             </View>
           </View>
 
           <View style={styles.infoRow}>
-            <Ionicons
-              name="card-outline"
-              size={20}
-              color={colors.primary}
-            />
+            <Ionicons name="card-outline" size={20} color={colors.primary} />
 
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>
-                Payment
-              </Text>
+              <Text style={styles.infoLabel}>Payment</Text>
 
-              <Text style={styles.infoValue}>
-                {order.paymentMethod}
-              </Text>
+              <Text style={styles.infoValue}>{order.paymentMethod}</Text>
             </View>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>
-          Payment Summary
-        </Text>
+        {/* Payment Summary */}
+
+        <Text style={styles.sectionTitle}>Payment Summary</Text>
 
         <View style={styles.card}>
           <View style={styles.summaryRow}>
-            <Text style={styles.label}>
-              Subtotal
-            </Text>
+            <Text style={styles.label}>Subtotal</Text>
 
-            <Text style={styles.value}>
-              ${order.subtotal.toFixed(2)}
-            </Text>
+            <Text style={styles.value}>${order.subtotal.toFixed(2)}</Text>
           </View>
 
           <View style={styles.summaryRow}>
-            <Text style={styles.label}>
-              Delivery fee
-            </Text>
+            <Text style={styles.label}>Delivery fee</Text>
 
-            <Text style={styles.value}>
-              ${order.deliveryFee.toFixed(
-                2
-              )}
-            </Text>
+            <Text style={styles.value}>${order.deliveryFee.toFixed(2)}</Text>
           </View>
 
           <View style={styles.summaryRow}>
-            <Text style={styles.label}>
-              Tax
-            </Text>
+            <Text style={styles.label}>Tax</Text>
 
-            <Text style={styles.value}>
-              ${order.tax.toFixed(2)}
-            </Text>
+            <Text style={styles.value}>${order.tax.toFixed(2)}</Text>
           </View>
 
           <View style={styles.divider} />
 
           <View style={styles.summaryRow}>
-            <Text style={styles.totalLabel}>
-              Total
-            </Text>
+            <Text style={styles.totalLabel}>Total</Text>
 
-            <Text style={styles.total}>
-              ${order.total.toFixed(2)}
-            </Text>
+            <Text style={styles.total}>${order.total.toFixed(2)}</Text>
           </View>
         </View>
 
+        {/* Date */}
+
         <Text style={styles.date}>
-          Ordered{" "}
-          {new Date(
-            order.createdAt
-          ).toLocaleString()}
+          Ordered {new Date(order.createdAt).toLocaleString()}
         </Text>
       </ScrollView>
     </View>
@@ -369,6 +378,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  loadingText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    marginTop: 10,
   },
 
   notFound: {

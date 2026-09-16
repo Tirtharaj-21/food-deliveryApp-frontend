@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
 import {
   FlatList,
   Image,
@@ -8,18 +9,21 @@ import {
   View,
 } from "react-native";
 
-import {
-  router,
-  useLocalSearchParams,
-} from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
 import { Ionicons } from "@expo/vector-icons";
 
 import FoodCard from "../../components/FoodCard";
 import colors from "../../constants/colors";
 import { useCart } from "../../context/CartContext";
-import { foods } from "../../data/foods";
-import { restaurants } from "../../data/restaurants";
+
+import {
+  getFoodsByRestaurantId,
+  getRestaurantById,
+} from "../../services/restaurantApi";
+
+import { Food } from "../../types/food";
+import { Restaurant } from "../../types/restaurant";
 
 const RestaurantDetailScreen = () => {
   const { id } = useLocalSearchParams<{
@@ -28,24 +32,52 @@ const RestaurantDetailScreen = () => {
 
   const { addToCart } = useCart();
 
-  const [selectedCategory, setSelectedCategory] =
-    useState("All");
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
-  const restaurant = restaurants.find(
-    (item) => item.id === id
-  );
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
 
-  const restaurantFoods = useMemo(() => {
-    return foods.filter(
-      (food) => food.restaurantId === id
-    );
-  }, [id]);
+  const [restaurantFoods, setRestaurantFoods] = useState<Food[]>([]);
+
+  const [loading, setLoading] = useState(true);
+
+  const [error, setError] = useState<string | null>(null);
+
+  const restaurantId = Number(id);
+
+  useEffect(() => {
+    const loadRestaurantDetails = async () => {
+      if (Number.isNaN(restaurantId)) {
+        setError("Invalid restaurant ID");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [restaurantData, foodData] = await Promise.all([
+          getRestaurantById(restaurantId),
+          getFoodsByRestaurantId(restaurantId),
+        ]);
+
+        setRestaurant(restaurantData);
+        setRestaurantFoods(foodData);
+      } catch (error) {
+        console.error("Failed to load restaurant details:", error);
+
+        setError("Failed to load restaurant details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRestaurantDetails();
+  }, [restaurantId]);
 
   const categories = useMemo(() => {
     const uniqueCategories = Array.from(
-      new Set(
-        restaurantFoods.map((food) => food.category)
-      )
+      new Set(restaurantFoods.map((food) => food.category)),
     );
 
     return ["All", ...uniqueCategories];
@@ -54,12 +86,17 @@ const RestaurantDetailScreen = () => {
   const filteredFoods =
     selectedCategory === "All"
       ? restaurantFoods
-      : restaurantFoods.filter(
-          (food) =>
-            food.category === selectedCategory
-        );
+      : restaurantFoods.filter((food) => food.category === selectedCategory);
 
-  if (!restaurant) {
+  if (loading) {
+    return (
+      <View style={styles.notFound}>
+        <Text style={styles.notFoundTitle}>Loading restaurant...</Text>
+      </View>
+    );
+  }
+
+  if (error || !restaurant) {
     return (
       <View style={styles.notFound}>
         <Ionicons
@@ -69,16 +106,11 @@ const RestaurantDetailScreen = () => {
         />
 
         <Text style={styles.notFoundTitle}>
-          Restaurant not found
+          {error || "Restaurant not found"}
         </Text>
 
-        <Pressable
-          onPress={() => router.back()}
-          style={styles.backHomeButton}
-        >
-          <Text style={styles.backHomeText}>
-            Go back
-          </Text>
+        <Pressable onPress={() => router.back()} style={styles.backHomeButton}>
+          <Text style={styles.backHomeText}>Go back</Text>
         </Pressable>
       </View>
     );
@@ -88,7 +120,7 @@ const RestaurantDetailScreen = () => {
     <View style={styles.container}>
       <FlatList
         data={filteredFoods}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => String(item.id)}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
@@ -98,18 +130,20 @@ const RestaurantDetailScreen = () => {
               router.push({
                 pathname: "/food/[id]",
                 params: {
-                  id: item.id,
+                  id: String(item.id),
                 },
               })
             }
-            onAdd={() => addToCart(item)}
+            onAddToCart={() => addToCart(item)}
           />
         )}
         ListHeaderComponent={
           <>
             <View style={styles.heroContainer}>
               <Image
-                source={{ uri: restaurant.image }}
+                source={{
+                  uri: restaurant.imageUrl,
+                }}
                 style={styles.heroImage}
               />
 
@@ -117,26 +151,16 @@ const RestaurantDetailScreen = () => {
                 onPress={() => router.back()}
                 style={styles.backButton}
               >
-                <Ionicons
-                  name="arrow-back"
-                  size={22}
-                  color={colors.text}
-                />
+                <Ionicons name="arrow-back" size={22} color={colors.text} />
               </Pressable>
             </View>
 
             <View style={styles.restaurantInfo}>
               <View style={styles.titleRow}>
-                <Text style={styles.restaurantName}>
-                  {restaurant.name}
-                </Text>
+                <Text style={styles.restaurantName}>{restaurant.name}</Text>
 
                 <View style={styles.rating}>
-                  <Ionicons
-                    name="star"
-                    size={14}
-                    color={colors.warning}
-                  />
+                  <Ionicons name="star" size={14} color={colors.warning} />
 
                   <Text style={styles.ratingText}>
                     {restaurant.rating.toFixed(1)}
@@ -144,9 +168,7 @@ const RestaurantDetailScreen = () => {
                 </View>
               </View>
 
-              <Text style={styles.cuisine}>
-                {restaurant.cuisine}
-              </Text>
+              <Text style={styles.cuisine}>{restaurant.cuisine}</Text>
 
               <View style={styles.metaRow}>
                 <View style={styles.meta}>
@@ -156,9 +178,7 @@ const RestaurantDetailScreen = () => {
                     color={colors.primary}
                   />
 
-                  <Text style={styles.metaText}>
-                    {restaurant.deliveryTime}
-                  </Text>
+                  <Text style={styles.metaText}>{restaurant.deliveryTime}</Text>
                 </View>
 
                 <View style={styles.meta}>
@@ -169,20 +189,17 @@ const RestaurantDetailScreen = () => {
                   />
 
                   <Text style={styles.metaText}>
-                    {restaurant.deliveryFee === 0
+                    {restaurant.deliveryFee == null ||
+                    restaurant.deliveryFee === 0
                       ? "Free delivery"
-                      : `$${restaurant.deliveryFee.toFixed(
-                          2
-                        )} delivery`}
+                      : `$${restaurant.deliveryFee.toFixed(2)} delivery`}
                   </Text>
                 </View>
               </View>
             </View>
 
             <View style={styles.menuHeader}>
-              <Text style={styles.menuTitle}>
-                Menu
-              </Text>
+              <Text style={styles.menuTitle}>Menu</Text>
             </View>
 
             <FlatList
@@ -190,29 +207,22 @@ const RestaurantDetailScreen = () => {
               horizontal
               showsHorizontalScrollIndicator={false}
               keyExtractor={(item) => item}
-              contentContainerStyle={
-                styles.categoryList
-              }
+              contentContainerStyle={styles.categoryList}
               renderItem={({ item }) => {
-                const active =
-                  selectedCategory === item;
+                const active = selectedCategory === item;
 
                 return (
                   <Pressable
-                    onPress={() =>
-                      setSelectedCategory(item)
-                    }
+                    onPress={() => setSelectedCategory(item)}
                     style={[
                       styles.categoryButton,
-                      active &&
-                        styles.activeCategory,
+                      active && styles.activeCategory,
                     ]}
                   >
                     <Text
                       style={[
                         styles.categoryText,
-                        active &&
-                          styles.activeCategoryText,
+                        active && styles.activeCategoryText,
                       ]}
                     >
                       {item}
@@ -225,12 +235,10 @@ const RestaurantDetailScreen = () => {
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>
-              No menu items
-            </Text>
+            <Text style={styles.emptyTitle}>No menu items</Text>
 
             <Text style={styles.emptyText}>
-              This category doesn't have any items yet.
+              This restaurant doesn't have any items yet.
             </Text>
           </View>
         }
@@ -392,6 +400,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: colors.background,
+    padding: 20,
   },
 
   notFoundTitle: {
@@ -399,6 +408,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     marginTop: 12,
+    textAlign: "center",
   },
 
   backHomeButton: {

@@ -2,10 +2,9 @@ import { Restaurant } from "../types/restaurant";
 
 export const restaurants: Restaurant[] = [
   {
-    id: "restaurant-1",
+    id: 1,
     name: "Urban Bites",
-    image:
-      "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=900",
+    image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=900",
     cuisine: "Italian • Pizza",
     rating: 4.8,
     deliveryTime: "25-35 min",
@@ -13,10 +12,9 @@ export const restaurants: Restaurant[] = [
     categories: ["Pizza", "Pasta", "Italian"],
   },
   {
-    id: "restaurant-2",
+    id: 2,
     name: "Spice Garden",
-    image:
-      "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=900",
+    image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=900",
     cuisine: "Indian • Curry",
     rating: 4.7,
     deliveryTime: "30-40 min",
@@ -24,10 +22,9 @@ export const restaurants: Restaurant[] = [
     categories: ["Indian", "Curry", "Biryani"],
   },
   {
-    id: "restaurant-3",
+    id: 3,
     name: "Burger House",
-    image:
-      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900",
+    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900",
     cuisine: "American • Burgers",
     rating: 4.6,
     deliveryTime: "20-30 min",
@@ -35,10 +32,9 @@ export const restaurants: Restaurant[] = [
     categories: ["Burgers", "American", "Fries"],
   },
   {
-    id: "restaurant-4",
+    id: 4,
     name: "Sushi World",
-    image:
-      "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=900",
+    image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=900",
     cuisine: "Japanese • Sushi",
     rating: 4.9,
     deliveryTime: "35-45 min",
@@ -46,10 +42,9 @@ export const restaurants: Restaurant[] = [
     categories: ["Sushi", "Japanese", "Asian"],
   },
   {
-    id: "restaurant-5",
+    id: 5,
     name: "Green Bowl",
-    image:
-      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=900",
+    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=900",
     cuisine: "Healthy • Salads",
     rating: 4.5,
     deliveryTime: "20-30 min",

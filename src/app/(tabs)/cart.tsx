@@ -1,15 +1,10 @@
-import React, { useMemo } from "react";
-import {
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { useMemo } from "react";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
+import { SafeAreaView } from "react-native-safe-area-context";
 import CartItem from "../../components/CartItem";
 import EmptyState from "../../components/EmptyState";
 import colors from "../../constants/colors";
@@ -43,8 +38,7 @@ const CartScreen = () => {
    * For a real application this would normally
    * come from the restaurant/order configuration.
    */
-  const deliveryFee =
-    cartItems.length > 0 ? DELIVERY_FEE : 0;
+  const deliveryFee = cartItems.length > 0 ? DELIVERY_FEE : 0;
 
   /**
    * Final amount the customer pays.
@@ -55,11 +49,9 @@ const CartScreen = () => {
 
   if (cartItems.length === 0) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>
-            Your Cart
-          </Text>
+          <Text style={styles.headerTitle}>Your Cart</Text>
         </View>
 
         <EmptyState
@@ -67,45 +59,34 @@ const CartScreen = () => {
           title="Your cart is empty"
           description="Looks like you haven't added anything to your cart yet."
           buttonText="Browse Restaurants"
-          onButtonPress={() =>
-            router.push("/(tabs)/home")
-          }
+          onButtonPress={() => router.push("/(tabs)/home")}
         />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <FlatList
         data={cartItems}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => String(item.id)}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <CartItem
             item={item}
-            onIncrement={() =>
-              incrementQuantity(item.id)
-            }
-            onDecrement={() =>
-              decrementQuantity(item.id)
-            }
-            onRemove={() =>
-              removeFromCart(item.id)
-            }
+            onIncrement={() => incrementQuantity(item.id)}
+            onDecrement={() => decrementQuantity(item.id)}
+            onRemove={() => removeFromCart(item.id)}
           />
         )}
         ListHeaderComponent={
           <View style={styles.header}>
             <View>
-              <Text style={styles.headerTitle}>
-                Your Cart
-              </Text>
+              <Text style={styles.headerTitle}>Your Cart</Text>
 
               <Text style={styles.itemCount}>
-                {totalItems}{" "}
-                {totalItems === 1 ? "item" : "items"}
+                {totalItems} {totalItems === 1 ? "item" : "items"}
               </Text>
             </View>
 
@@ -114,85 +95,55 @@ const CartScreen = () => {
                 // We intentionally use the existing
                 // remove functions rather than exposing
                 // internal state to the screen.
-                cartItems.forEach((item) =>
-                  removeFromCart(item.id)
-                );
+                cartItems.forEach((item) => removeFromCart(item.id));
               }}
             >
-              <Text style={styles.clearText}>
-                Clear all
-              </Text>
+              <Text style={styles.clearText}>Clear all</Text>
             </Pressable>
           </View>
         }
         ListFooterComponent={
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>
-              Order Summary
-            </Text>
+            <Text style={styles.summaryTitle}>Order Summary</Text>
 
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>
-                Subtotal
-              </Text>
+              <Text style={styles.summaryLabel}>Subtotal</Text>
 
-              <Text style={styles.summaryValue}>
-                ${totalPrice.toFixed(2)}
-              </Text>
+              <Text style={styles.summaryValue}>${totalPrice.toFixed(2)}</Text>
             </View>
 
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>
-                Delivery fee
-              </Text>
+              <Text style={styles.summaryLabel}>Delivery fee</Text>
 
-              <Text style={styles.summaryValue}>
-                ${deliveryFee.toFixed(2)}
-              </Text>
+              <Text style={styles.summaryValue}>${deliveryFee.toFixed(2)}</Text>
             </View>
 
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>
-                Tax
-              </Text>
+              <Text style={styles.summaryLabel}>Tax</Text>
 
-              <Text style={styles.summaryValue}>
-                ${tax.toFixed(2)}
-              </Text>
+              <Text style={styles.summaryValue}>${tax.toFixed(2)}</Text>
             </View>
 
             <View style={styles.divider} />
 
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>
-                Total
-              </Text>
+              <Text style={styles.totalLabel}>Total</Text>
 
-              <Text style={styles.totalValue}>
-                ${grandTotal.toFixed(2)}
-              </Text>
+              <Text style={styles.totalValue}>${grandTotal.toFixed(2)}</Text>
             </View>
 
             <Pressable
-              onPress={() =>
-                router.push("/checkout")
-              }
+              onPress={() => router.push("/checkout")}
               style={styles.checkoutButton}
             >
-              <Text style={styles.checkoutText}>
-                Proceed to Checkout
-              </Text>
+              <Text style={styles.checkoutText}>Proceed to Checkout</Text>
 
-              <Ionicons
-                name="arrow-forward"
-                size={19}
-                color={colors.white}
-              />
+              <Ionicons name="arrow-forward" size={19} color={colors.white} />
             </Pressable>
           </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

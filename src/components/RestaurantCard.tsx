@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
 
@@ -17,49 +11,38 @@ interface RestaurantCardProps {
   onPress: () => void;
 }
 
-const RestaurantCard = ({
-  restaurant,
-  onPress,
-}: RestaurantCardProps) => {
+const RestaurantCard = ({ restaurant, onPress }: RestaurantCardProps) => {
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.card,
-        pressed && styles.pressed,
-      ]}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
       <Image
-        source={{ uri: restaurant.image }}
+        source={{ uri: restaurant.imageUrl }}
         style={styles.image}
+        resizeMode="cover"
+        onLoad={() => {
+          console.log("IMAGE LOADED:", restaurant.name);
+        }}
+        onError={(event) => {
+          console.log("IMAGE ERROR:", restaurant.name, event.nativeEvent.error);
+        }}
       />
 
       <View style={styles.content}>
         <View style={styles.titleRow}>
-          <Text
-            style={styles.name}
-            numberOfLines={1}
-          >
+          <Text style={styles.name} numberOfLines={1}>
             {restaurant.name}
           </Text>
 
           <View style={styles.ratingContainer}>
-            <Ionicons
-              name="star"
-              size={14}
-              color={colors.warning}
-            />
+            <Ionicons name="star" size={14} color={colors.warning} />
 
-            <Text style={styles.rating}>
-              {restaurant.rating.toFixed(1)}
-            </Text>
+            <Text style={styles.rating}>{restaurant.rating.toFixed(1)}</Text>
           </View>
         </View>
 
-        <Text
-          style={styles.cuisine}
-          numberOfLines={1}
-        >
+        <Text style={styles.cuisine} numberOfLines={1}>
           {restaurant.cuisine}
         </Text>
 
@@ -71,9 +54,7 @@ const RestaurantCard = ({
               color={colors.textSecondary}
             />
 
-            <Text style={styles.metaText}>
-              {restaurant.deliveryTime}
-            </Text>
+            <Text style={styles.metaText}>{restaurant.deliveryTime}</Text>
           </View>
 
           <View style={styles.metaItem}>
@@ -84,7 +65,7 @@ const RestaurantCard = ({
             />
 
             <Text style={styles.metaText}>
-              {restaurant.deliveryFee === 0
+              {restaurant.deliveryFee == null || restaurant.deliveryFee === 0
                 ? "Free delivery"
                 : `$${restaurant.deliveryFee.toFixed(2)}`}
             </Text>

@@ -8,10 +8,7 @@ import {
   View,
 } from "react-native";
 
-import {
-  router,
-  useLocalSearchParams,
-} from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
 import { Ionicons } from "@expo/vector-icons";
 
@@ -26,7 +23,7 @@ const FoodDetailsScreen = () => {
 
   const { addToCart } = useCart();
 
-  const food = foods.find((item) => item.id === id);
+  const food = foods.find((item) => item.id === Number(id));
 
   if (!food) {
     return (
@@ -37,17 +34,10 @@ const FoodDetailsScreen = () => {
           color={colors.primary}
         />
 
-        <Text style={styles.notFound}>
-          Food item not found
-        </Text>
+        <Text style={styles.notFound}>Food item not found</Text>
 
-        <Pressable
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Text style={styles.backButtonText}>
-            Go Back
-          </Text>
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>Go Back</Text>
         </Pressable>
       </View>
     );
@@ -67,59 +57,33 @@ const FoodDetailsScreen = () => {
         contentContainerStyle={styles.scrollContent}
       >
         <View>
-          <Image
-            source={{ uri: food.image }}
-            style={styles.image}
-          />
+          <Image source={{ uri: food.image }} style={styles.image} />
 
-          <Pressable
-            onPress={() => router.back()}
-            style={styles.backIcon}
-          >
-            <Ionicons
-              name="arrow-back"
-              size={22}
-              color={colors.text}
-            />
+          <Pressable onPress={() => router.back()} style={styles.backIcon}>
+            <Ionicons name="arrow-back" size={22} color={colors.text} />
           </Pressable>
         </View>
 
         <View style={styles.content}>
           <View style={styles.categoryRow}>
-            <Text style={styles.category}>
-              {food.category}
-            </Text>
+            <Text style={styles.category}>{food.category}</Text>
 
             {food.isPopular && (
               <View style={styles.popularBadge}>
-                <Ionicons
-                  name="flame"
-                  size={13}
-                  color={colors.primary}
-                />
+                <Ionicons name="flame" size={13} color={colors.primary} />
 
-                <Text style={styles.popularText}>
-                  Popular
-                </Text>
+                <Text style={styles.popularText}>Popular</Text>
               </View>
             )}
           </View>
 
-          <Text style={styles.name}>
-            {food.name}
-          </Text>
+          <Text style={styles.name}>{food.name}</Text>
 
-          <Text style={styles.price}>
-            ${food.price.toFixed(2)}
-          </Text>
+          <Text style={styles.price}>${food.price.toFixed(2)}</Text>
 
-          <Text style={styles.sectionTitle}>
-            Description
-          </Text>
+          <Text style={styles.sectionTitle}>Description</Text>
 
-          <Text style={styles.description}>
-            {food.description}
-          </Text>
+          <Text style={styles.description}>{food.description}</Text>
 
           <View style={styles.infoCard}>
             <View style={styles.infoItem}>
@@ -129,40 +93,23 @@ const FoodDetailsScreen = () => {
                 color={colors.primary}
               />
 
-              <Text style={styles.infoText}>
-                Freshly prepared
-              </Text>
+              <Text style={styles.infoText}>Freshly prepared</Text>
             </View>
 
             <View style={styles.infoItem}>
-              <Ionicons
-                name="time-outline"
-                size={20}
-                color={colors.primary}
-              />
+              <Ionicons name="time-outline" size={20} color={colors.primary} />
 
-              <Text style={styles.infoText}>
-                20–30 min
-              </Text>
+              <Text style={styles.infoText}>20–30 min</Text>
             </View>
           </View>
         </View>
       </ScrollView>
 
       <View style={styles.bottomContainer}>
-        <Pressable
-          onPress={handleAddToCart}
-          style={styles.addButton}
-        >
-          <Ionicons
-            name="cart-outline"
-            size={21}
-            color={colors.white}
-          />
+        <Pressable onPress={handleAddToCart} style={styles.addButton}>
+          <Ionicons name="cart-outline" size={21} color={colors.white} />
 
-          <Text style={styles.addButtonText}>
-            Add to Cart
-          </Text>
+          <Text style={styles.addButtonText}>Add to Cart</Text>
         </Pressable>
       </View>
     </View>
